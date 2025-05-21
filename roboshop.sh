@@ -8,7 +8,7 @@ DOMAIN_NAME="daws84skc.site"
 
 for instance in ${INSTANCES[@]}
 do
-    INSTANCE_ID=$(aws ec2 run-instances --image-id $AMI_ID --instance-type t2.micro --security-group-ids $SG_ID --tag-specifications "ResourceType=instance, Tags=[{Key=name, Value=test}]" ---query "Instances[0].InstanceId" --output text)
+    INSTANCE_ID=$(aws ec2 run-instances --image-id $AMI_ID --instance-type t2.micro --security-group-ids $SG_ID --tag-specifications "ResourceType=instance, Tags=[{Key=name, Value=test}]" --query "Instances[0].InstanceId" --output text)
 
     if [ $instance != "frontend" ]
     then
