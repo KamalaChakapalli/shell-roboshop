@@ -1,6 +1,6 @@
 #!/bin/bash
 
-USER_ID=$(id -u)
+USERID=$(id -u)
 R="\e[31m"
 G="\e[32m"
 Y="\e[33m"
@@ -11,7 +11,7 @@ LOG_FILE="$LOGS_FOLDER/$SCRIPT_NAME.log"
 SCRIPT_DIR=$PWD
 
 mkdir -p $LOGS_FOLDER
-echo "Script started executing at: $(date)" &>> $LOG_FILE
+echo "Script started executing at: $(date)" | tee -a $LOG_FILE
 
 if [ $USERID -ne 0 ]
 then
