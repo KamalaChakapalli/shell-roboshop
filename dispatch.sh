@@ -1,5 +1,6 @@
 #!/bin/bash
 
+START_TIME=$(date +%s)
 USERID=$(id -u)
 R="\e[31m"
 G="\e[32m"
@@ -33,14 +34,8 @@ VALIDATE(){
     fi
 }
 
-dnf module disable nodejs -y &>> $LOG_FILE
-VALIDATE $? "Disabling nodejs"
-
-dnf module enable nodejs:20 -y &>> $LOG_FILE
-VALIDATE $? "Enabling nodejs:20"
-
-dnf install nodejs -y &>> $LOG_FILE
-VALIDATE $? "Installing nodejs:20"
+dnf install golang -y &>> $LOG_FILE
+VALIDATE $? "Installing Python3"
 
 id roboshop &>> $LOG_FILE
 if [ $? -ne 0 ]
@@ -54,36 +49,35 @@ fi
 mkdir -p /app
 VALIDATE $? "Creating app directory"
 
-curl -o /tmp/catalogue.zip https://roboshop-artifacts.s3.amazonaws.com/catalogue-v3.zip &>> $LOG_FILE
-VALIDATE $? "Download of catalogue"
+curl -L -o /tmp/dispatch.zip https://roboshop-artifacts.s3.amazonaws.com/dispatch-v3.zip &>> $LOG_FILE
+VALIDATE $? "Download of dispatch"
 
 rm -rf /app/*
-
 cd /app
+unzip /tmp/dispatch.zip &>> $LOG_FILE
+VALIDATE $? "Unzipping of dispatch"
 
-unzip /tmp/catalogue.zip &>> $LOG_FILE
-VALIDATE $? "Unzipping of catalogue"
+go mod init dispatch &>> $LOG_FILE
+VALIDATE $? "Building a module"
 
-npm install &>> $LOG_FILE
-VALIDATE $? "Installing dependencies"
+go get &>> $LOG_FILE
+VALIDATE $? "Download Go packages"
 
-cp $SCRIPT_DIR/catalogue.service /etc/systemd/system/catalogue.service
-VALIDATE $? "Copying catalogue service"
+go build &>> $LOG_FILE
+VALIDATE $? "Building of packages"
+
+cp $SCRIPT_DIR/dispatch.service /etc/systemd/system/dispatch.service
+VALIDATE $? "Copying dispatch service"
 
 systemctl daemon-reload &>> $LOG_FILE
-systemctl enable catalogue &>> $LOG_FILE
-systemctl start catalogue
-VALIDATE $? "Starting catalogue"
+VALIDATE $? "Daemon Reload"
 
-cp $SCRIPT_DIR/mongo.repo /etc/yum.repos.d/mongo.repo
-dnf install mongodb-mongosh -y &>> $LOG_FILE
-VALIDATE $? "Installing MongoDB client"
+systemctl enable dispatch &>> $LOG_FILE
+VALIDATE $? "Enabling dispatch"
 
-STATUS=$(mongosh --host mongodb.daws84skc.site --eval 'db.getMongo().getDBNames().indexOf("catalogue")')
-if [ $STATUS -lt 0 ]
-then
-    mongosh --host mongodb.daws84skc.site < /app/db/master-data.js &>> $LOG_FILE
-    VALIDATE $? "Loading mongoDB data"
-else
-    echo -e "Data is already loaded.. $Y Skipping $N"
-fi
+systemctl start payment &>> $LOG_FILE
+VALIDATE $? "Starting dispatch"
+
+END_TIME=$(date +%s)
+TOTAL_TIME=$(( $END_TIME - $START_TIME ))
+echo -e "Script execution completed successfully, $Y time taken: $TOTAL_TIME seconds $N" | tee -a $LOG_FILE

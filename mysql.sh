@@ -1,5 +1,6 @@
 #!/bin/bash
 
+START_TIME=$(date +%s)
 USERID=$(id -u)
 R="\e[31m"
 G="\e[32m"
@@ -33,24 +34,23 @@ VALIDATE(){
     fi
 }
 
-cp mongo.repo /etc/yum.repos.d/mongo.repo
-VALIDATE $? "Copying MongoDB repo"
+echo "Please enter root password to setup"
+read -s MYSQL_ROOT_PASSWORD
+VALIDATE $? "Reading root password"
 
-dnf install mongodb-org -y &>> $LOG_FILE
-VALIDATE $? "Installing MongoDB server"
+dnf install mysql-server -y &>> $LOG_FILE
+VALIDATE $? "Installing MySQL Server"
 
-systemctl enable mongod &>> $LOG_FILE
-VALIDATE $? "Enabling MongoDB"
+systemctl enable mysqld &>> $LOG_FILE
+VALIDATE $? "Enabling MySQL"
 
-systemctl start mongod &>> $LOG_FILE
-VALIDATE $? "Starting MongoDB"
-
-sed -i 's/127.0.0.1/0.0.0.0/g' /etc/mongod.conf &>> $LOG_FILE
-VALIDATE $? "Editing MongoDB conf file for remote connections"
-
-systemctl restart mongod &>> $LOG_FILE
-VALIDATE $? "Restarting MongoDB"
+systemctl start mysqld  &>> $LOG_FILE
+VALIDATE $? "Starting MySQL"
 
 
+mysql_secure_installation --set-root-pass $MYSQL_ROOT_PASSWORD &>> $LOG_FILE
+VALIDATE $? "Setting MySQL root password"
 
-
+END_TIME=$(date +%s)
+TOTAL_TIME=$(( $END_TIME - $START_TIME ))
+echo -e "Script execution completed successfully, $Y time taken: $TOTAL_TIME seconds $N" | tee -a $LOG_FILE

@@ -6,15 +6,18 @@ INSTANCES=("mongodb" "redis" "mysql" "rabbitmq" "catalogue" "user" "cart" "shipp
 ZONE_ID="Z0185878EC5RA4SI82RG"
 DOMAIN_NAME="daws84skc.site"
 
-for instance in ${INSTANCES[@]}
+#for instance in ${INSTANCES[@]}
+for instance in $@
 do
     INSTANCE_ID=$(aws ec2 run-instances --image-id $AMI_ID --instance-type t2.micro --security-group-ids $SG_ID --tag-specifications "ResourceType=instance, Tags=[{Key=Name, Value=$instance}]" --query "Instances[0].InstanceId" --output text)
 
     if [ $instance != "frontend" ]
     then
         IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query "Reservations[0].Instances[0].PrivateIpAddress" --output text)
+        RECORD_NAME="$instance.$DOMAIN_NAME"
     else
         IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query "Reservations[0].Instances[0].PublicIpAddress" --output text)
+        RECORD_NAME="$DOMAIN_NAME"
     fi
     echo "$instance ipaddress is: $IP"
 
@@ -27,7 +30,7 @@ do
         ,"Changes": [{
         "Action"             : "UPSERT"
         ,"ResourceRecordSet" : {
-            "Name"             : "'$instance'.'$DOMAIN_NAME'"
+            "Name"             : "'$RECORD_NAME'"
             ,"Type"            : "A"
             ,"TTL"             : 1
             ,"ResourceRecords" : [{

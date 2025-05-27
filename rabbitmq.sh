@@ -1,5 +1,6 @@
 #!/bin/bash
 
+START_TIME=$(date +%s)
 USERID=$(id -u)
 R="\e[31m"
 G="\e[32m"
@@ -33,24 +34,25 @@ VALIDATE(){
     fi
 }
 
-cp mongo.repo /etc/yum.repos.d/mongo.repo
-VALIDATE $? "Copying MongoDB repo"
+echo "Please enter rabbitmq password to setup"
+read -s RABBITMQ_PASSWD
+VALIDATE $? "Reading rabbitmq password"
 
-dnf install mongodb-org -y &>> $LOG_FILE
-VALIDATE $? "Installing MongoDB server"
+cp $SCRIPT_DIR/rabbitmq.repo /etc/yum.repos.d/rabbitmq.repo
+VALIDATE $? "Adding rabbitmq repo"
 
-systemctl enable mongod &>> $LOG_FILE
-VALIDATE $? "Enabling MongoDB"
+dnf install rabbitmq-server -y &>> $LOG_FILE
+VALIDATE $? "Installing Rabbitmq server"
 
-systemctl start mongod &>> $LOG_FILE
-VALIDATE $? "Starting MongoDB"
+systemctl enable rabbitmq-server &>> $LOG_FILE
+VALIDATE $? "Enabling rabbitmq server"
 
-sed -i 's/127.0.0.1/0.0.0.0/g' /etc/mongod.conf &>> $LOG_FILE
-VALIDATE $? "Editing MongoDB conf file for remote connections"
+systemctl start rabbitmq-server &>> $LOG_FILE
+VALIDATE $? "Starting mabbitmq server"
 
-systemctl restart mongod &>> $LOG_FILE
-VALIDATE $? "Restarting MongoDB"
+rabbitmqctl add_user roboshop $RABBITMQ_PASSWD &>> $LOG_FILE
+rabbitmqctl set_permissions -p / roboshop ".*" ".*" ".*" &>> $LOG_FILE
 
-
-
-
+END_TIME=$(date +%s)
+TOTAL_TIME=$(( $END_TIME - $START_TIME ))
+echo -e "Script execution completed successfully, $Y time taken: $TOTAL_TIME seconds $N" | tee -a $LOG_FILE
