@@ -75,7 +75,7 @@ VALIDATE $? "Daemon Reload"
 systemctl enable dispatch &>> $LOG_FILE
 VALIDATE $? "Enabling dispatch"
 
-systemctl start payment &>> $LOG_FILE
+systemctl start dispatch &>> $LOG_FILE
 VALIDATE $? "Starting dispatch"
 
 END_TIME=$(date +%s)
