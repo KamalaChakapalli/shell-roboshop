@@ -36,7 +36,7 @@ VALIDATE(){
 
 echo "Please enter root password to setup"
 read -s MYSQL_ROOT_PASSWORD
-VALIDATE $? "Reading root password"
+VALIDATE $? "Setting root password"
 
 dnf install mysql-server -y &>> $LOG_FILE
 VALIDATE $? "Installing MySQL Server"
